@@ -1,0 +1,574 @@
+//*********************************************************
+//* Joseph Rydel
+//* COSC 1560 Computer Programming II                    
+//* Program Name: Movie Store.cpp
+//* Homework Number 06, Assignment 06                      
+//* Problem #: xx.x                                        
+//* Due Date: 10/28/2020                                                           
+//*********************************************************
+
+#include<iostream>
+#include<iomanip>
+#include<string>
+#include<cstring>
+#include<cstdlib>
+#include<cmath>
+#include<fstream>
+
+using namespace std;
+
+struct Movie
+{
+	int MPAC;
+	int year;
+	int runTime;
+	int checkedIn;
+	int checkedOut;
+	string name;
+};
+
+int menu(Movie*);
+void getData(Movie*);
+void display(Movie*);
+void findMovies(Movie*);
+void sortMovies(Movie*);
+void statistics(Movie*);
+int binarySearch(Movie*, int);
+void rentals(Movie*);
+double average(Movie*);
+string oldest(Movie*);
+string newest(Movie*);
+int cI(Movie*);
+int cO(Movie*);
+int total(Movie*);
+const string LINE1(60, '*');
+const string LINE2(60, '-');
+const string LINE3(4, ' ');
+void swap(int &, int &);
+
+const int SIZE = 20;
+
+int main()
+{
+	Movie* movPtr;
+	movPtr = new Movie[SIZE];
+
+	int option;
+
+	option = menu(movPtr);
+
+	delete[] movPtr;
+
+	return 0;
+}
+
+int menu(Movie* ptr)
+{
+	int choice;
+	getData(ptr);
+	const string LINE(60, '*');
+
+	
+		cout << "\n" << LINE << endl;
+		cout << "Webster Classic Movies Rentals Menu" << endl;
+		cout << "\n1. Display inventory of movies" << endl;
+		cout << "2. Display information about selected movie" << endl;
+		cout << "3. Rentals" << endl;
+		cout << "4. Display statistics for movies" << endl;
+		cout << "5. Quit" << endl;
+
+		cout << "\nSelect option: ";
+		cin >> choice;
+
+		cout << LINE << endl;
+
+	do
+	{
+	
+		if (choice <= 0 || choice >= 6)
+		{
+			cout << "Incorrect. Try again: ";
+			cin >> choice;
+		}
+
+		if (choice == 1)
+		{
+			display(ptr);
+		}
+
+		if (choice == 2)
+		{
+			findMovies(ptr);
+		}
+
+		if (choice == 3)
+		{
+			rentals(ptr);
+		}
+
+		if (choice == 4)
+		{
+			statistics(ptr);
+		}
+
+
+	} while (choice != 5);
+
+
+	if (choice == 5)
+	{
+		char any;
+		cout << "See you again!" << endl;
+		cout << "Press any key. ";
+		cin >> any;
+		exit(any);
+	}
+	cout << LINE << endl;
+	return choice;
+}
+
+void getData(Movie* ptr)
+{
+	ifstream mov;
+	mov.open("Movies.txt");
+
+	for (int i = 0; i < SIZE; i++)
+	{
+		mov >> ptr[i].MPAC;
+		mov >> ptr[i].year;
+		mov >> ptr[i].runTime;
+		mov >> ptr[i].checkedIn;
+		mov >> ptr[i].checkedOut;
+		getline(mov, ptr[i].name);
+
+	}
+
+	sortMovies(ptr);
+
+	mov.close();
+}
+
+void display(Movie* ptr)
+{
+
+	cout << "The Webster Classic Movies Rentals list includes: \n" << endl;
+	cout << setw(5) << "MPAC " << left << setw(25) << " Title " << setw(6) << "Year "
+		<< setw(4) << "Runtime " << setw(3) << "In " << '\t' << setw(3) << "Out" << "\n" << LINE2 << endl;
+
+	for (int i = 0; i < SIZE; i++)
+	{
+		cout << setw(5) << ptr[i].MPAC << setw(25) << ptr[i].name <<
+			setw(6) << ptr[i].year << setw(4) <<
+			ptr[i].runTime << left << setw(3) << LINE3 << ptr[i].checkedIn << left << setw(3)
+			<< LINE3 << ptr[i].checkedOut << "\n";
+	}
+	cout << LINE1 << endl;
+
+	menu(ptr);
+}
+
+void findMovies(Movie* ptr)
+{
+	int upc;
+	int results;
+
+	cout << "Enter the MPAC of a movie to locate: ";
+	cin >> upc;
+
+	results = binarySearch(ptr, upc);
+
+	if (upc == 0)
+	{
+		menu(ptr);
+	}
+
+	if (results == -1)
+	{
+		cout << "That movie is not in the store.\n" << endl;
+		
+
+		if (upc == 0)
+		{
+			menu(ptr);
+		}
+	}
+
+	
+
+	else
+	{
+		cout << setw(5) << "MPAC " << left << setw(25) << " Title " << setw(6) << "Year "
+			<< setw(4) << "Runtime " << setw(3) << "In " << '\t' << setw(3) << "Out" << "\n" << LINE2 << endl;
+
+		cout << setw(5) << ptr[results].MPAC << left << setw(25) << ptr[results].name <<
+			setw(6) << ptr[results].year << setw(4) <<
+			ptr[results].runTime << LINE3 << setw(3) << ptr[results].checkedIn << setw(3)
+			<< " " << ptr[results].checkedOut << "\n" << endl;
+
+		
+
+		
+	}
+
+	
+
+}
+
+void sortMovies(Movie* ptr)
+{
+	int max;
+	
+
+	for (max = SIZE - 1; max > 0; max--)
+	{
+		for (int i = 0; i < max; i++)
+		{
+			if (ptr[i].MPAC > ptr[i + 1].MPAC)
+			{
+				swap(ptr[i], ptr[i + 1]);
+			}
+		}
+	}
+}
+
+void swap(int &pa, int &pb)
+{
+	int swa = pa;
+	pa = pb;
+	pb = swa;
+}
+
+void statistics(Movie* ptr)
+{
+	const string LINE(60, '*');
+	double avg;
+	int in, out, tot;
+	string newMov, old;
+
+	avg = average(ptr);
+	old = oldest(ptr);
+	newMov = newest(ptr);
+	in = cI(ptr);
+	out = cO(ptr);
+	tot = total(ptr);
+
+	cout << "There are " << SIZE << " different movies in the store." << endl;
+	cout << "The average run time for the " << SIZE <<
+		" movies is " << setprecision(1) << fixed << avg << endl;
+	cout << "The oldest movie is " << old << endl;
+	cout << "The newest movie is " << newMov << endl;
+	cout << "There are " << in << " movies checked in." << endl;
+	cout << "There are " << out << " movies checked out." << endl;
+	cout << "There are " << tot << " copies in this store.\n" << endl;
+	cout << LINE << endl;
+
+	menu(ptr);
+}
+
+int binarySearch(Movie* ptr, int upc)
+{
+	int first = 0;
+	int last = SIZE - 1;
+	int middle;
+	int pos = -1;
+	bool found = false;
+	while (!found && first <= last)
+	{
+		middle = (first + last) / 2;
+
+		if (ptr[middle].MPAC == upc)
+		{
+			found = true;
+			pos = middle;
+		}
+
+		else if (ptr[middle].MPAC > upc)
+
+			last = middle - 1;
+
+		else
+			first = middle + 1;
+		
+	}
+	return pos;
+}
+
+
+
+void rentals(Movie* ptr)
+{
+	int upc, results;
+	char check;
+	cout << "Enter movie MPAC: ";
+	cin >> upc;
+
+	if (upc == 0)
+	{
+		menu(ptr);
+	}
+
+	results = binarySearch(ptr, upc);
+
+	if (results == -1)
+	{
+		cout << "That movie is not in the store.\n" << endl;
+		
+
+		if (upc == 0)
+		{
+			menu(ptr);
+		}
+	}
+
+	else
+	{
+		cout << "Check in (i) or check out (o)? ";
+
+		cin >> check;
+		if (check == 'o')
+		{
+
+			if (ptr[results].checkedIn > 0)
+			{
+				cout << ptr[results].checkedIn - 1 << " copies available and " <<
+					ptr[results].checkedOut + 1 << " copies checked out." << endl;
+
+				
+			}
+
+
+
+
+			if(ptr[results].checkedIn <= 0)
+			{
+				cout << "No copies in stock at this time. Try another movie." << endl;
+				
+				
+
+			}
+
+		}
+
+		if (check == 'i')
+		{
+			cout << ptr[results].checkedIn + 1 << " copies available and " <<
+				ptr[results].checkedOut - 1 << " copies checked out." << endl;
+		
+
+			
+		}
+	}
+
+	
+	
+}
+
+double average(Movie* ptr)
+{
+	int total = 0;
+
+	for (int i = 0; i < SIZE; i++)
+	{
+		total += ptr[i].runTime;
+	}
+	double average = static_cast<double>(total) / static_cast<double>(SIZE);
+
+	return average;
+}
+
+string oldest(Movie* ptr)
+{
+	int old = ptr[0].year;
+	string pos;
+	for (int i = 0; i < SIZE; i++)
+	{
+		if (ptr[i].year < old)
+		{
+			old = ptr[i].year;
+			pos = ptr[i].name;
+		}
+	}
+	return pos;
+}
+
+string newest(Movie* ptr)
+{
+	int newest = 0;
+	string pos;
+	for (int i = 0; i < SIZE; i++)
+	{
+		if (newest < ptr[i].year)
+		{
+			newest = ptr[i].year;
+			pos = ptr[i].name;
+		}
+	}
+
+	return pos;
+}
+
+int cI(Movie* ptr)
+{
+	int in = 0;
+	int i = 0;
+	for (ptr[i].checkedIn; ptr[i].checkedIn < SIZE; i++)
+	{
+		in += ptr[i].checkedIn;
+	}
+	return in;
+}
+
+int cO(Movie* ptr)
+{
+	int out = 0;
+	int i = 0;
+	for (ptr[i].checkedOut; ptr[i].checkedOut < SIZE; i++)
+	{
+		out += ptr[i].checkedOut;
+	}
+	return out;
+}
+
+int total(Movie* ptr)
+{
+	int tot = 0;
+	int i = 0;
+	for (i; i < SIZE; i++)
+	{
+		tot += ptr[i].checkedIn;
+		tot += ptr[i].checkedOut;
+	}
+	return tot;
+}
+
+
+//************************************************************
+//Webster Classic Movies Rentals Menu
+//
+//1. Display inventory of movies
+//2. Display information about selected movie
+//3. Rentals
+//4. Display statistics for movies
+//5. Quit
+//
+//Select option : 1
+//* ***********************************************************
+//The Webster Classic Movies Rentals list includes :
+//
+//MPAC  Title                   Year  Runtime In  Out
+//------------------------------------------------------------
+//1101  Casablanca              1942  102     6    6
+//1200  Duck Soup               1933  68      8    3
+//1301  Citizen Kane            1941  119     7    2
+//1350  Animal House            1978  109     3    12
+//1405  My Favorite Brunette    1947  87      4    7
+//2200  Gone with the Wind      1939  226     4    10
+//2345  Public Enemy            1931  84      6    4
+//2870  Jazz Singer             1927  88      9    3
+//3103  White Christmas         1954  120     12    1
+//3670  It's a Wonderful Life   1946  130     11    2
+//4490  Doctor Zhivago          1965  200     8    5
+//4876  Sound of Music          1965  174     7    7
+//5102  Young Frankenstein      1973  106     0    15
+//5234  King Kong               1933  100     3    9
+//5570  From Here to Eternity   1953  118     10    3
+//6601  Wizard of Oz            1939  101     4    10
+//7109  Sergeant York           1941  134     6    6
+//7405  It Happened One Night   1934  105     4    8
+//8330  Topper                  1937  98      3    8
+//9400  Caine Mutiny            1954  125     8    4
+//* ***********************************************************
+//
+//************************************************************
+//Webster Classic Movies Rentals Menu
+//
+//1. Display inventory of movies
+//2. Display information about selected movie
+//3. Rentals
+//4. Display statistics for movies
+//5. Quit
+//
+//Select option : 2
+//* ***********************************************************
+//Enter the MPAC of a movie to locate : 5102
+//MPAC  Title                   Year  Runtime In  Out
+//------------------------------------------------------------
+//5102  Young Frankenstein      1973  106     0     15
+//
+//Enter the MPAC of a movie to locate : 1111
+//That movie is not in the store.
+//
+//Enter the MPAC of a movie to locate : 0
+//
+//* ***********************************************************
+//Webster Classic Movies Rentals Menu
+//
+//1. Display inventory of movies
+//2. Display information about selected movie
+//3. Rentals
+//4. Display statistics for movies
+//5. Quit
+//
+//Select option : 3
+//* ***********************************************************
+//Enter movie MPAC : 5102
+//Check in(i) or check out(o) ? o
+//No copies in stock at this time.Try another movie.
+//Enter movie MPAC : 7405
+//Check in(i) or check out(o) ? o
+//3 copies available and 9 copies checked out.
+//Enter movie MPAC : 0
+//
+//* ***********************************************************
+//Webster Classic Movies Rentals Menu
+//
+//1. Display inventory of movies
+//2. Display information about selected movie
+//3. Rentals
+//4. Display statistics for movies
+//5. Quit
+//
+//Select option : 2
+//* ***********************************************************
+//Enter the MPAC of a movie to locate : 7405
+//MPAC  Title                   Year  Runtime In  Out
+//------------------------------------------------------------
+//7405  It Happened One Night   1934  105     4     8
+//
+//Enter the MPAC of a movie to locate : 0
+//
+//* ***********************************************************
+//Webster Classic Movies Rentals Menu
+//
+//1. Display inventory of movies
+//2. Display information about selected movie
+//3. Rentals
+//4. Display statistics for movies
+//5. Quit
+//
+//Select option : 4
+//* ***********************************************************
+//There are 20 different movies in the store.
+//The average run time for the 20 movies is 119.7
+//The oldest movie is  Jazz Singer
+//The newest movie is  Animal House
+//There are 123 movies checked in.
+//There are 125 movies checked out.
+//There are 248 copies in this store.
+//
+//* ***********************************************************
+//
+//************************************************************
+//Webster Classic Movies Rentals Menu
+//
+//1. Display inventory of movies
+//2. Display information about selected movie
+//3. Rentals
+//4. Display statistics for movies
+//5. Quit
+//
+//Select option : 8
+//* ***********************************************************
+//Incorrect.Try again : 5
+//See you again!
+//Press any key.ff
